@@ -18,9 +18,10 @@ idle_state = new StatementState(self, "Idle")
 	.AddEnter(function() {
 		image_index = 0;
 		h_speed = 0;
+		v_speed = 0;
 	})
 	.AddUpdate(function() {
-		if !place_meeting(x,y+v_speed,obj_brick) {
+		if !place_meeting(x,y+max(v_speed, 1),obj_brick) {
 			player_state.ChangeState("Falling");
 			return;
 		}
@@ -38,7 +39,7 @@ idle_state = new StatementState(self, "Idle")
 		leftkey_down = keyboard_check(vk_left);
 		move_dir = rightkey_down - leftkey_down;
 		if (move_dir != 0) {
-			if place_meeting(x+(move_dir*5),y,obj_brick) {
+			if place_meeting(x+(move_dir*5),y-10,obj_brick) {
 				//player_state.ChangeState("Idle");
 				return;
 			} else {
@@ -76,9 +77,13 @@ crouch_state = new StatementState(self, "Crouch")
 running_state = new StatementState(self, "Running")
 	.AddEnter(function() {
 		image_index = 1;
+		
+		if (self.y % 64 != 0) {
+			self.y = self.y + 64 - (self.y % 64);
+		}
 	})
 	.AddUpdate(function() {
-		if !place_meeting(x,y+v_speed,obj_brick) {
+		if !place_meeting(x,y+max(1,v_speed),obj_brick) {
 			player_state.ChangeState("Falling");
 			return;
 		}
@@ -104,7 +109,10 @@ running_state = new StatementState(self, "Running")
 			}
 			h_speed = min(max_speed, h_speed + acceleration);
 			image_index = 1;
-			image_xscale = 1;
+			if (image_xscale == -1) {
+				image_xscale = 1;
+				x -= 64;
+			}
 		} else if (move_dir == -1) {
 			if (h_speed > 0) {
 				// moving right, enter slide
@@ -114,7 +122,10 @@ running_state = new StatementState(self, "Running")
 			}
 			h_speed = max(-max_speed, h_speed - acceleration);
 			image_index = 1;
-			image_xscale = -1;
+			if (image_xscale == 1) {
+				image_xscale = -1;
+				x += 64;
+			}
 		} else { // no input
 			// slow to a stop
 			if (h_speed > 0) {
@@ -127,7 +138,7 @@ running_state = new StatementState(self, "Running")
 				player_state.ChangeState("Idle");
 			}
 		}
-		if place_meeting(x+h_speed,y,obj_brick) {
+		if place_meeting(x+h_speed,y-10,obj_brick) {
 			player_state.ChangeState("Idle");
 			return;
 		} else {
@@ -213,12 +224,23 @@ floating_state = new StatementState(self, "Floating")
 			return;
 		}
 		
-		if place_meeting(x,y+v_speed,obj_brick) {
-			player_state.ChangeState("Idle");
-			return;
-		}
+		//if place_meeting(x,y+v_speed,obj_brick) {
+		//	player_state.ChangeState("Idle");
+		//	self.y += v_speed;
+		//	return;
+		//}
 		
 		v_speed = max(v_max_speed, v_speed - j_acceleration);
+		//self.y += v_speed;
+		
+		
+		
+		if place_meeting(x,y+max(1, v_speed),obj_brick) {
+			//y += v_speed;
+			v_speed = 0;
+			player_state.ChangeState("Running");
+			return;
+		}
 		self.y += v_speed;
 		
 		rightkey_down = keyboard_check(vk_right);
@@ -275,11 +297,15 @@ falling_state = new StatementState(self, "Falling")
 	})
 	.AddUpdate(function() {
 		v_speed = max(v_max_speed, v_speed - f_acceleration);
-		if place_meeting(x,y+v_speed,obj_brick) {
+
+		self.y += v_speed;
+		
+		if place_meeting(x,y+max(1, v_speed),obj_brick) {
+			//y += v_speed;
+			v_speed = 0;
 			player_state.ChangeState("Running");
 			return;
 		}
-		self.y += v_speed;
 		
 		rightkey_down = keyboard_check(vk_right);
 		leftkey_down = keyboard_check(vk_left);
@@ -333,15 +359,21 @@ sliding_state = new StatementState(self, "Sliding")
 	.AddEnter(function() {
 		image_index = 3;
 		if (h_speed < 0) {
-			image_xscale = -1;
+			if (image_xscale == 1) {
+				image_xscale = -1;
+				x += 64;
+			}
 			h_speed = -slide_max_speed;	
 		} else if (h_speed > 0) {
-			image_xscale = 1;
+			if (image_xscale == -1) {
+				image_xscale = 1;
+				x -= 64;
+			}
 			h_speed = slide_max_speed;	
 		}
 	})
 	.AddUpdate(function() {
-		if !place_meeting(x,y+v_speed,obj_brick) {
+		if !place_meeting(x,y+max(1, v_speed),obj_brick) {
 			player_state.ChangeState("Falling");
 			return;
 		}
@@ -358,7 +390,7 @@ sliding_state = new StatementState(self, "Sliding")
 		} else if (h_speed == 0) {
 			player_state.ChangeState("Running");	
 		}
-		if place_meeting(x+h_speed,y,obj_brick) {
+		if place_meeting(x+h_speed,y-10,obj_brick) {
 			player_state.ChangeState("Idle");
 			return;
 		} else {
