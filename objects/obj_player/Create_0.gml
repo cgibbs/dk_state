@@ -78,10 +78,20 @@ running_state = new StatementState(self, "Running")
 		leftkey_down = keyboard_check(vk_left);
 		move_dir = rightkey_down - leftkey_down;
 		if (move_dir == 1) {
+			if (h_speed < 0) {
+				// moving left, enter slide
+				player_state.ChangeState("Sliding");
+				return;
+			}
 			h_speed = min(max_speed, h_speed + acceleration);
 			image_index = 1;
 			image_xscale = 1;
 		} else if (move_dir == -1) {
+			if (h_speed > 0) {
+				// moving right, enter slide
+				player_state.ChangeState("Sliding");
+				return;
+			}
 			h_speed = max(-max_speed, h_speed - acceleration);
 			image_index = 1;
 			image_xscale = -1;
@@ -237,12 +247,34 @@ falling_state = new StatementState(self, "Falling")
 		self.x += h_speed;
 	});
 	
+sliding_state = new StatementState(self, "Sliding")
+	.AddEnter(function() {
+		image_index = 3;
+	})
+	.AddUpdate(function() {
+		if (h_speed > 0) {
+			h_speed = max(0, h_speed - 2 * f_riction);
+		} else if (h_speed < 0) {
+			// mirror sprite
+			h_speed = min(0, h_speed + 2 * f_riction);
+		} else if (h_speed == 0) {
+			player_state.ChangeState("Running");	
+		}
+		if place_meeting(x+h_speed,y,obj_brick) {
+			player_state.ChangeState("Idle");
+			return;
+		} else {
+			self.x += h_speed;
+		}
+	});
+	
 player_state.AddState(idle_state);
 player_state.AddState(running_state);
 player_state.AddState(crouch_state);
 player_state.AddState(jumping_state);
 player_state.AddState(falling_state);
 player_state.AddState(floating_state);
+player_state.AddState(sliding_state);
 
 
 
