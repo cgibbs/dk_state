@@ -19,6 +19,11 @@ idle_state = new StatementState(self, "Idle")
 		h_speed = 0;
 	})
 	.AddUpdate(function() {
+		if !place_meeting(x,y+v_speed,obj_brick) {
+			player_state.ChangeState("Falling");
+			return;
+		}
+		
 		// check controls and change state accordingly
 		if (keyboard_check(vk_down)) {
 			player_state.ChangeState("Crouch");
@@ -46,13 +51,17 @@ crouch_state = new StatementState(self, "Crouch")
 		image_index = 5;
 	})
 	.AddUpdate(function() {
+		if !place_meeting(x,y+v_speed,obj_brick) {
+			player_state.ChangeState("Falling");
+			return;
+		}
+		
 		if (!keyboard_check(vk_down)) {
 			player_state.ChangeState("Idle");	
 		}
 		if (h_speed > 0) {
 			h_speed = max(0, h_speed - 2 * f_riction);
 		} else if (h_speed < 0) {
-			// mirror sprite
 			h_speed = min(0, h_speed + 2 * f_riction);
 		}
 		if place_meeting(x+h_speed,y,obj_brick) {
@@ -68,6 +77,11 @@ running_state = new StatementState(self, "Running")
 		image_index = 1;
 	})
 	.AddUpdate(function() {
+		if !place_meeting(x,y+v_speed,obj_brick) {
+			player_state.ChangeState("Falling");
+			return;
+		}
+		
 		if (keyboard_check(vk_down)) {
 			player_state.ChangeState("Crouch");
 			return;
@@ -102,7 +116,6 @@ running_state = new StatementState(self, "Running")
 			image_xscale = -1;
 		} else { // no input
 			// slow to a stop
-			//image_index = 0;
 			if (h_speed > 0) {
 				h_speed = max(0, h_speed - 1 * f_riction);
 			} else if (h_speed < 0) {
@@ -130,38 +143,55 @@ jumping_state = new StatementState(self, "Jumping")
 		
 		
 		if (player_state.GetStateTime() >= 10) {
-			//player_state.ChangeState("Falling");	
 			player_state.ChangeState("Floating");
 			return;
 		}
 		if (keyboard_check(vk_space)) {
-			//v_speed = min(v_max_speed, v_speed + j_acceleration);
 			v_speed = v_max_speed;
 			self.y -= v_speed;
 		} else {
-			//player_state.ChangeState("Falling");
 			player_state.ChangeState("Floating");
 			return;
 		}
 		
-		if (move_dir == 1) {
-			h_speed = min(max_speed, h_speed + acceleration);
-			//image_index = 1;
-			image_xscale = 1;
-		} else if (move_dir == -1) {
-			h_speed = max(-max_speed, h_speed - acceleration);
-			//image_index = 1;
-			image_xscale = -1;
+		rightkey_down = keyboard_check(vk_right);
+		leftkey_down = keyboard_check(vk_left);
+		move_dir = rightkey_down - leftkey_down;
+		
+		if (h_speed > 0) {
+			if (move_dir == 1) {
+				h_speed = min(max_speed, h_speed + acceleration);
+			} else if (move_dir == -1) {
+				h_speed = max(-max_speed, h_speed - jump_drift);
+			}
+		} else if (h_speed < 0) {
+			if (move_dir == 1) {
+				h_speed = min(max_speed, h_speed + jump_drift);
+			} else if (move_dir == -1) {
+				h_speed = max(-max_speed, h_speed - acceleration);
+			}
+		} else if (h_speed == 0) {
+			if (image_xscale == 1) {
+				if (move_dir == 1) {
+					h_speed = acceleration;
+				} else if (move_dir == -1) {
+					h_speed = jump_drift;
+				}
+			} else if (image_xscale == -1) {
+				if (move_dir == 1) {
+					h_speed = jump_drift;
+				} else if (move_dir == -1) {
+					h_speed = acceleration;
+				}
+			}
 		} else { // no input
 			// slow to a stop
-			//image_index = 0;
 			if (h_speed > 0) {
 				h_speed = max(0, h_speed - 2 * f_riction);
 			} else if (h_speed < 0) {
 				h_speed = min(0, h_speed + 2 * f_riction);
 			} else if (h_speed == 0) {
 				// go back to idle
-				//player_state.ChangeState("Idle");
 			}
 		}
 		if place_meeting(x+h_speed,y,obj_brick) {
@@ -190,24 +220,44 @@ floating_state = new StatementState(self, "Floating")
 		v_speed = max(v_max_speed, v_speed - j_acceleration);
 		self.y += v_speed;
 		
-		if (move_dir == 1) {
-			h_speed = min(max_speed, h_speed + acceleration);
-			//image_index = 1;
-			image_xscale = 1;
-		} else if (move_dir == -1) {
-			h_speed = max(-max_speed, h_speed - acceleration);
-			//image_index = 1;
-			image_xscale = -1;
+		rightkey_down = keyboard_check(vk_right);
+		leftkey_down = keyboard_check(vk_left);
+		move_dir = rightkey_down - leftkey_down;
+		
+		if (h_speed > 0) {
+			if (move_dir == 1) {
+				h_speed = min(max_speed, h_speed + acceleration);
+			} else if (move_dir == -1) {
+				h_speed = max(-max_speed, h_speed - jump_drift);
+			}
+		} else if (h_speed < 0) {
+			if (move_dir == 1) {
+				h_speed = min(max_speed, h_speed + jump_drift);
+			} else if (move_dir == -1) {
+				h_speed = max(-max_speed, h_speed - acceleration);
+			}
+		} else if (h_speed == 0) {
+			if (image_xscale == 1) {
+				if (move_dir == 1) {
+					h_speed = acceleration;
+				} else if (move_dir == -1) {
+					h_speed = jump_drift;
+				}
+			} else if (image_xscale == -1) {
+				if (move_dir == 1) {
+					h_speed = jump_drift;
+				} else if (move_dir == -1) {
+					h_speed = acceleration;
+				}
+			}
 		} else { // no input
 			// slow to a stop
-			//image_index = 0;
 			if (h_speed > 0) {
 				h_speed = max(0, h_speed - 2 * f_riction);
 			} else if (h_speed < 0) {
 				h_speed = min(0, h_speed + 2 * f_riction);
 			} else if (h_speed == 0) {
 				// go back to idle
-				//player_state.ChangeState("Idle");
 			}
 		}
 		if place_meeting(x+h_speed,y,obj_brick) {
@@ -230,39 +280,71 @@ falling_state = new StatementState(self, "Falling")
 		}
 		self.y += v_speed;
 		
-		if (move_dir == 1) {
-			h_speed = min(max_speed, h_speed + acceleration);
-			//image_index = 1;
-			image_xscale = 1;
-		} else if (move_dir == -1) {
-			h_speed = max(-max_speed, h_speed - acceleration);
-			//image_index = 1;
-			image_xscale = -1;
+		rightkey_down = keyboard_check(vk_right);
+		leftkey_down = keyboard_check(vk_left);
+		move_dir = rightkey_down - leftkey_down;
+		
+		if (h_speed > 0) {
+			if (move_dir == 1) {
+				h_speed = min(max_speed, h_speed + acceleration);
+			} else if (move_dir == -1) {
+				h_speed = max(-max_speed, h_speed - jump_drift);
+			}
+		} else if (h_speed < 0) {
+			if (move_dir == 1) {
+				h_speed = min(max_speed, h_speed + jump_drift);
+			} else if (move_dir == -1) {
+				h_speed = max(-max_speed, h_speed - acceleration);
+			}
+		} else if (h_speed == 0) {
+			if (image_xscale == 1) {
+				if (move_dir == 1) {
+					h_speed = acceleration;
+				} else if (move_dir == -1) {
+					h_speed = jump_drift;
+				}
+			} else if (image_xscale == -1) {
+				if (move_dir == 1) {
+					h_speed = jump_drift;
+				} else if (move_dir == -1) {
+					h_speed = acceleration;
+				}
+			}
 		} else { // no input
 			// slow to a stop
-			//image_index = 0;
 			if (h_speed > 0) {
 				h_speed = max(0, h_speed - 2 * f_riction);
 			} else if (h_speed < 0) {
 				h_speed = min(0, h_speed + 2 * f_riction);
 			} else if (h_speed == 0) {
 				// go back to idle
-				//player_state.ChangeState("Idle");
 			}
 		}
-		self.x += h_speed;
+		if place_meeting(x+h_speed,y,obj_brick) {
+			player_state.ChangeState("Idle");
+			return;
+		} else {
+			self.x += h_speed;
+		}
 	});
 	
 sliding_state = new StatementState(self, "Sliding")
 	.AddEnter(function() {
 		image_index = 3;
 		if (h_speed < 0) {
+			image_xscale = -1;
 			h_speed = -slide_max_speed;	
 		} else if (h_speed > 0) {
+			image_xscale = 1;
 			h_speed = slide_max_speed;	
 		}
 	})
 	.AddUpdate(function() {
+		if !place_meeting(x,y+v_speed,obj_brick) {
+			player_state.ChangeState("Falling");
+			return;
+		}
+		
 		if (keyboard_check(vk_space)) {
 			player_state.ChangeState("Backflipping");
 		}
@@ -291,7 +373,6 @@ backflipping_state = new StatementState(self, "Backflipping")
 	})
 	.AddUpdate(function () {
 		if (player_state.GetStateTime() >= 10) {
-			//player_state.ChangeState("Falling");	
 			player_state.ChangeState("Floating");
 			return;
 		}
@@ -314,8 +395,7 @@ backflipping_state = new StatementState(self, "Backflipping")
 			}
 		}
 		if place_meeting(x+h_speed,y,obj_brick) {
-			//player_state.ChangeState("Idle");
-			//return;
+
 		} else {
 			self.x += h_speed;
 		}
@@ -329,15 +409,3 @@ player_state.AddState(falling_state);
 player_state.AddState(floating_state);
 player_state.AddState(sliding_state);
 player_state.AddState(backflipping_state);
-
-
-
-// example move code
-//move_dir = rightkey_down - leftkey_down;
-//if move_dir != 0 {
-//    if (move_dir == 1) h_speed = min(max_speed, h_speed + acceleration); //accelerate going right
-//    if (move_dir == -1) h_speed = max(-max_speed, h_speed - acceleration); //accelerate going left
-//}    else {
-//    if (h_speed > 0) h_speed = max(0, h_speed - f_riction); //friction going right
-//    if (h_speed < 0) h_speed = min(0, h_speed + f_riction); //friction going left
-//}
