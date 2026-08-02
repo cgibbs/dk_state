@@ -7,8 +7,9 @@ v_speed = 0;
 acceleration = 2;
 j_acceleration = 3;
 f_acceleration = 3;
-max_speed = 10;
+max_speed = 14;
 v_max_speed = 20;
+v_backflip_speed = 30;
 f_riction = 1;
 jump_drift = 2;
 slide_max_speed = 10;
@@ -117,9 +118,9 @@ running_state = new StatementState(self, "Running")
 		} else { // no input
 			// slow to a stop
 			if (h_speed > 0) {
-				h_speed = max(0, h_speed - 1 * f_riction);
+				h_speed = max(0, h_speed - 2 * f_riction);
 			} else if (h_speed < 0) {
-				h_speed = min(0, h_speed + 1 * f_riction);
+				h_speed = min(0, h_speed + 2 * f_riction);
 			} 
 			if (h_speed == 0) {
 				// go back to idle
@@ -372,28 +373,34 @@ backflipping_state = new StatementState(self, "Backflipping")
 		h_speed = 0 - h_speed;	
 	})
 	.AddUpdate(function () {
-		if (player_state.GetStateTime() >= 10) {
+		if (player_state.GetStateTime() >= 12) {
 			player_state.ChangeState("Floating");
 			return;
 		}
 		
-		v_speed = v_max_speed;
+		v_speed = v_backflip_speed;
 		self.y -= v_speed;
 		
-		if (move_dir == 1) {
-			h_speed = min(max_speed, h_speed + acceleration);
-		} else if (move_dir == -1) {
-			h_speed = max(-max_speed, h_speed - acceleration);
-		} else { // no input
-
-			if (h_speed > 0) {
-				h_speed = max(0, h_speed - 2 * f_riction);
-			} else if (h_speed < 0) {
-				h_speed = min(0, h_speed + 2 * f_riction);
-			} else if (h_speed == 0) {
-				
-			}
+		if (h_speed > 0) {
+			h_speed = max_speed;	
+		} else if (h_speed < 0) {
+			h_speed = -max_speed;
 		}
+		
+		//if (move_dir == 1) {
+		//	h_speed = min(max_speed, h_speed + acceleration);
+		//} else if (move_dir == -1) {
+		//	h_speed = max(-max_speed, h_speed - acceleration);
+		//} else { // no input
+
+		//	if (h_speed > 0) {
+		//		h_speed = max(0, h_speed - 2 * f_riction);
+		//	} else if (h_speed < 0) {
+		//		h_speed = min(0, h_speed + 2 * f_riction);
+		//	} else if (h_speed == 0) {
+				
+		//	}
+		//}
 		if place_meeting(x+h_speed,y,obj_brick) {
 
 		} else {
