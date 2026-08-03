@@ -298,7 +298,6 @@ falling_state = new StatementState(self, "Falling")
 	.AddUpdate(function() {
 		v_speed = max(v_max_speed, v_speed - f_acceleration);
 
-		self.y += v_speed;
 		
 		if place_meeting(x,y+max(1, v_speed),obj_brick) {
 			//y += v_speed;
@@ -306,6 +305,9 @@ falling_state = new StatementState(self, "Falling")
 			player_state.ChangeState("Running");
 			return;
 		}
+		
+		self.y += v_speed;
+		
 		
 		rightkey_down = keyboard_check(vk_right);
 		leftkey_down = keyboard_check(vk_left);
@@ -358,6 +360,11 @@ falling_state = new StatementState(self, "Falling")
 sliding_state = new StatementState(self, "Sliding")
 	.AddEnter(function() {
 		image_index = 3;
+		
+		if (self.y % 64 != 0) {
+			self.y = self.y + 64 - (self.y % 64);
+		}
+		
 		if (h_speed < 0) {
 			if (image_xscale == 1) {
 				image_xscale = -1;
@@ -370,6 +377,8 @@ sliding_state = new StatementState(self, "Sliding")
 				x -= 64;
 			}
 			h_speed = slide_max_speed;	
+		} else if (h_speed == 0) {
+			player_state.ChangeState("Idle");
 		}
 	})
 	.AddUpdate(function() {
